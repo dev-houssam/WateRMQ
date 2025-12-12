@@ -28,6 +28,8 @@ WateRMQ::WateRMQ(const string & filename){
 	this->_filename = filename;
     // Nous n'avons  pas besoin de confirmer que je  l'ai lu
     this->_init();
+
+    this->_sem = SemaphoreCPP(filename);
 }
 
 
@@ -121,7 +123,7 @@ void WateRMQ::login(const string & v_host, int channel_max, int frame_max, int h
 
 void WateRMQ::_taskConsumer(map<std::string, std::string> command_){
 	//zenity --info --text="I am a Consumer"
-     execl("/usr/bin/zenity", 
+     execl("~/heeloo/LibWateRMQ/WateRMQ/BackendC/bin/consumer", 
      	"--connection", 
      		"chp::" + command_["hostname"],
      		"chp::" + command_["port"],
@@ -244,9 +246,9 @@ char * WateRMQ::_peek(Queue* q)
 }
 
 string WateRMQ::_readMessage(){
-    //sem->wait();
+    this->_sem->wait();
         string messageIn = this->_peek(this->_ptr_queue);
-    //sem->post();
+    this->_sem->post();
     return messageIn;
 }
 
