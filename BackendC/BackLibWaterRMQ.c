@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <semaphore.h>
+#include <unistd.h>
 
 #define MESSAGE_UNIT 10
 
@@ -69,7 +71,7 @@ char * peek(Queue* q)
 {
     if (isEmpty(q)) {
         printf("Queue is empty\n");
-        return -1; // return some default value or handle
+        return NULL; // return some default value or handle
                    // error differently
     }
     return q->items[q->front + 1];
@@ -160,28 +162,28 @@ typedef struct {
   /*Nouvelles fonctionnalités*/
   QueueMmap *qmmap;
   SemaphoreMmap *semap;
-} WateRQM;
+} WateRMQ;
 
 
 typedef enum {
-  GRQM_EXIT_FAILURE = -1
-} WateRQM_EXIT_CODE;
+  GRMQ_EXIT_FAILURE = -1
+} WateRMQ_EXIT_CODE;
 
 
-WateRQM * create_WateRQM_Instance_private(){
-  WateRQM * GRQM = (WateRQM * ) malloc(sizeof (WateRQM));
-  if (GRQM == NULL)
+WateRMQ * create_WateRMQ_Instance_private(){
+  WateRMQ * GRMQ = (WateRMQ * ) malloc(sizeof (WateRMQ));
+  if (GRMQ == NULL)
   {
-    fprintf(stderr, "%s\n", "Unable to allocate memory : WateRQM cannot be created");
-    exit(GRQM_EXIT_FAILURE);
+    fprintf(stderr, "%s\n", "Unable to allocate memory : WateRMQ cannot be created");
+    exit(GRMQ_EXIT_FAILURE);
   }
-  return GRQM;
+  return GRMQ;
 }
 
 // Public
 
 ConfigurationExchange * 
-create_WateRQM_Configuration_Exchange_private
+create_WateRMQ_Configuration_Exchange_private
 ( const char * exchange_name,
   const char * bindingKey,
   const char *queuename){
@@ -207,7 +209,7 @@ create_WateRQM_Configuration_Exchange_private
 }
 
 ConfigurationConnection * 
-create_WateRQM_ConfigurationConnection_private
+create_WateRMQ_ConfigurationConnection_private
 ( const char * hostname,
   int port){
     ConfigurationConnection * cc = (ConfigurationConnection * ) malloc(sizeof(ConfigurationConnection));
@@ -218,7 +220,7 @@ create_WateRQM_ConfigurationConnection_private
     memcpy(cc->hostname, hostname, strlen(hostname));
     //..
     cc->port = port;
-    cc->socket = (amqp_socket_t * ) malloc(sizeof(amqp_socket_t)); //Only socket must be initialized typically : do not forget this detailled detail !
+    //cc->socket = (amqp_socket_t * ) malloc(sizeof(amqp_socket_t)); //Only socket must be initialized typically : do not forget this detailled detail !
     if(NULL == cc->socket) return NULL;
   return cc;
 }
@@ -228,7 +230,7 @@ create_WateRQM_ConfigurationConnection_private
 
 
 ConfigurationLogin * 
-create_WateRQM_ConfigurationLogin_private
+create_WateRMQ_ConfigurationLogin_private
 ( const char * v_host,
   int channel_max,
   int frame_max,
@@ -263,7 +265,7 @@ create_WateRQM_ConfigurationLogin_private
 }
 
 ExceptionHandling * 
-create_WateRQM_ExceptionHandling_private
+create_WateRMQ_ExceptionHandling_private
 ( const char * loginExceptionMessage,
   const char * openingChannelExceptionMessage,
   const char * queueExceptionMessage,
@@ -323,7 +325,7 @@ create_WateRQM_ExceptionHandling_private
 
 
 QueueMmap * 
-create_WateRQM_QueueMmap_private
+create_WateRMQ_QueueMmap_private
 (char * filename,
     size_t length,
     void * addr, 
@@ -339,7 +341,7 @@ create_WateRQM_QueueMmap_private
 
 
 Queue *
-create_WateRQM_ConsumingQueue_private(){
+create_WateRMQ_ConsumingQueue_private(){
   Queue * q = (Queue *) malloc(sizeof(Queue));
   if(NULL == q) return NULL;
   initializeQueue(q);
@@ -350,12 +352,13 @@ create_WateRQM_ConsumingQueue_private(){
 
 
 SemaphoreMmap * 
-create_WateRQM_SemaphoreMmap_private
+create_WateRMQ_SemaphoreMmap_private
 (   char * sem_name,
     int oflag,
     mode_t mode,
     unsigned int value, 
     sem_t * semaphore_self){
+
     SemaphoreMmap * sm = (SemaphoreMmap * ) malloc(sizeof(SemaphoreMmap));
     if(sm == NULL) return NULL;
     sm->sem_name = (char *) malloc(sizeof(char) * ( strlen(sem_name) + 1 ));
@@ -363,23 +366,23 @@ create_WateRQM_SemaphoreMmap_private
     memset(sm->sem_name, 0, strlen(sem_name) + 1 );
     memcpy(sm->sem_name, sem_name, strlen(sem_name));
 
-    sm->semaphore_self = sem_open(SEM_NAME, 0);  
+    sm->semaphore_self = sem_open(sm->sem_name, 0);  
     //..sem_wait(sm->semaphore_self);
 
   return sm;
 }
 
 
-WateRQM * _init_WateRQM_public(){
-  WateRQM * _instance   = create_WateRQM_Instance_private();
-  _instance->conf_exchange  = create_WateRQM_Configuration_Exchange_private(NULL, NULL, NULL);
-  _instance->conf_conn      = create_WateRQM_ConfigurationConnection_private(NULL, 0);
-  _instance->conf_login     = create_WateRQM_ConfigurationLogin_private(NULL, 0, 0, 0, AMQP_SASL_METHOD_PLAIN, NULL, NULL);
-  _instance->except         = create_WateRQM_ExceptionHandling_private(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-  _instance->consumingQueue = create_WateRQM_ConsumingQueue_private();
-  _instance->qmmap = create_WateRQM_QueueMmap_private
+WateRMQ * _init_WateRMQ_public(){
+  WateRMQ * _instance   = create_WateRMQ_Instance_private();
+  _instance->conf_exchange  = create_WateRMQ_Configuration_Exchange_private(NULL, NULL, NULL);
+  _instance->conf_conn      = create_WateRMQ_ConfigurationConnection_private(NULL, 0);
+  _instance->conf_login     = create_WateRMQ_ConfigurationLogin_private(NULL, 0, 0, 0, AMQP_SASL_METHOD_PLAIN, NULL, NULL);
+  _instance->except         = create_WateRMQ_ExceptionHandling_private(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  _instance->consumingQueue = create_WateRMQ_ConsumingQueue_private();
+  _instance->qmmap = create_WateRMQ_QueueMmap_private
 (NULL, 0, NULL, 0, 0, 0, 0, 0, _instance->consumingQueue);
-  _instance->semap = create_WateRQM_SemaphoreMmap_private(NULL, 0, 0, 0, NULL);
+  _instance->semap = create_WateRMQ_SemaphoreMmap_private(NULL, 0, 0, 0, NULL);
 
 
   return _instance;
@@ -388,8 +391,8 @@ WateRQM * _init_WateRQM_public(){
 
 
 
-void configurationExchange_WateRQM_public(
-  WateRQM * _instance, 
+void configurationExchange_WateRMQ_public(
+  WateRMQ * _instance, 
   const char * exchange_name,
   const char * bindingKey,
   const char *queuename){
@@ -399,7 +402,7 @@ void configurationExchange_WateRQM_public(
 }
 
 
-void configurationConnection_WateRQM_public(WateRQM * _instance, const char * hostname, int port){
+void configurationConnection_WateRMQ_public(WateRMQ * _instance, const char * hostname, int port){
     memcpy(
     _instance->conf_conn->hostname, hostname, strlen(hostname));
     _instance->conf_conn->port = port;
@@ -422,8 +425,8 @@ void configurationConnection_WateRQM_public(WateRQM * _instance, const char * ho
     }
 }
 
-void configurationExceptionMessage_WateRQM_public(
-  WateRQM * _instance, 
+void configurationExceptionMessage_WateRMQ_public(
+  WateRMQ * _instance, 
   const char * loginExceptionMessage,
   const char * openingChannelExceptionMessage,
   const char * queueExceptionMessage,
@@ -443,8 +446,8 @@ void configurationExceptionMessage_WateRQM_public(
 }
 
 
-void configurationLogin_WateRQM_public(
-  WateRQM * _instance, 
+void configurationLogin_WateRMQ_public(
+  WateRMQ * _instance, 
   const char * v_host, 
   int channel_max, 
   int frame_max,
@@ -478,7 +481,7 @@ void configurationLogin_WateRQM_public(
 
 // Requesting Method :
 
-int addMessageInQueue_private(WateRQM * _instance, const char * messageIn){
+int addMessageInQueue_private(WateRMQ * _instance, const char * messageIn){
   // TODO 
   if (NULL == messageIn)
   {
@@ -500,7 +503,7 @@ void getEnvelopeFromConsumer_public(){
   // TODO : plus tard
 }
 
-char * getCurrentMessage_public(WateRQM * _instance){
+char * getCurrentMessage_public(WateRMQ * _instance){
 
   /*char * ptr_message = (char *) malloc(sizeof(char)*150);
   if(NULL = ptr_message){
@@ -509,7 +512,7 @@ char * getCurrentMessage_public(WateRQM * _instance){
 /*  const char * ptr_message2 = (const char * ) peek(_instance->consumingQueue);
   return ptr_message2;*/
 
-  return (const char *) peek(_instance->consumingQueue);
+  return (char *) peek(_instance->consumingQueue);
 }
 
 //Callbacks Set :
@@ -532,7 +535,7 @@ void On_AMQP_CONNECTION_CLOSE_METHOD_private(){
 
 
 
-void retRequestHandling_private(amqp_connection_state_t conn, amqp_frame_t * frame, amqp_rpc_reply_t ret){
+void retRequestHandling_private(amqp_connection_state_t conn, amqp_frame_t frame, amqp_rpc_reply_t ret){
       if (AMQP_RESPONSE_NORMAL != ret.reply_type) {
         if (AMQP_RESPONSE_LIBRARY_EXCEPTION == ret.reply_type &&
             AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
@@ -579,27 +582,27 @@ void retRequestHandling_private(amqp_connection_state_t conn, amqp_frame_t * fra
 }
 
 
-void sendMessage(WateRMQ * _instance, const char * ){
-    sem_wait(sm->semap->semaphore_self);
+void sendMessage(WateRMQ * _instance, const char * message){
+    sem_wait(_instance->semap->semaphore_self);
     //On met à jour la queue (Couche profonde) :
-    addMessageInQueue_private(_instance->qmmp->ptr_queue, (const char * ) envelope.message.body.bytes);
+    addMessageInQueue_private(_instance->qmmap->ptr_queue, (const char * ) message);
 
     //Puis on mets à jour Le pont Mmap
     {       
             //Sémaphore : Lock()
                 //Ecriture dans C
                 //Préparation des messages à envoyer
-                enqueue(_instance->qmmap->ptr__queue, /*data:{...}*/ message);
+                enqueue(_instance->qmmap->ptr_queue, /*data:{...}*/ message);
         
                 //  Envoie des modification    
-                msync(_instance->qmmap->ptr__queue, sizeof(Queue), MS_SYNC);
+                msync(_instance->qmmap->ptr_queue, sizeof(Queue), MS_SYNC);
             //Sémaphore : UnLock()
      }
-    sem_close(sm->semap->semaphore_self);
+    sem_close(_instance->semap->semaphore_self);
 }
 
 
-void rabbitmqConsuming_private(WateRQM * _instance){
+void rabbitmqConsuming_private(WateRMQ * _instance){
   // ------------------------
   amqp_frame_t frame;
 
@@ -623,7 +626,7 @@ void rabbitmqConsuming_private(WateRQM * _instance){
 }
 
 void configurationSemaphoreMmap_private(
-WateRQM * wrmq_info,    
+WateRMQ * wrmq_info,    
     char * sem_name,
     int oflag,
     mode_t mode,
@@ -637,7 +640,7 @@ WateRQM * wrmq_info,
 
 
 void configurationQueueMmap_private(
-    WateRQM * _instance,    
+    WateRMQ * _instance,    
     char * filename,
     size_t length,
     void * addr, 
@@ -662,15 +665,15 @@ void configurationQueueMmap_private(
     if (st.st_size == 0) {
         // New file: Create and write initial data
         ftruncate(fd, sizeof(Queue));
-        _instance->qmmap->ptr__queue = (Queue) mmap(0, sizeof(Queue), PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
+        _instance->qmmap->ptr_queue = (Queue) mmap(0, sizeof(Queue), PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
         _instance->consumingQueue = ptr_queue;
-        _instance->qmmap->ptr__queue = ptr_queue;
+        _instance->qmmap->ptr_queue = ptr_queue;
         //Pas besoin d'ecrire pour l'instant :
         //Prochainement : Implementation de headers + signal
         //Pour l'instant, on configure simplement.
     } else {
         // Existing file: Try to read data : Lecture dans C++
-        _instance->qmmap->ptr__queue = (Queue *) mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+        _instance->qmmap->ptr_queue = (Queue *) mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     }
     
 
@@ -686,29 +689,46 @@ void destroy_WateRMQ(WateRMQ * _instance){
 }
 
 
-void configurationRabbitMQ_private(WateRQM * _instance){
+void configurationRabbitMQ_private(WateRMQ * _instance){
     //Conf
     amqp_channel_open(_instance->conf_login->conn, 1 /*WHaat ??*/);
 
-  ret_code = amqp_get_rpc_reply(_instance->conf_login->conn);
+  amqp_rpc_reply_t ret_code = amqp_get_rpc_reply(_instance->conf_login->conn);
   die_on_amqp_error(ret_code, _instance->except->openingChannelExceptionMessage /*"Opening channel"*/);
-
+  amqp_bytes_t queue = {0};
   {
-    amqp_queue_declare_ok_t *r = amqp_queue_declare(_instance->conf_login->conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+    // -----------------------
+    
+    queue.len=12; 
+
+    int auto_delete = 0;
+    int durable = 1;
+  
+    //const char * qu = "test_queue22";
+    queue.bytes = (void *) qu;
+
+    // -----------------------
+    amqp_queue_declare_ok_t *r = 
+      amqp_queue_declare(
+        _instance->conf_login->conn, 
+        1, queue, 0, durable, 0, auto_delete, 
+      amqp_empty_table);
+    
     ret_code = amqp_get_rpc_reply(_instance->conf_login->conn);
     die_on_amqp_error(ret_code, _instance->except->queueExceptionMessage /*"Declaring queue"*/);
 
-    //On a des doutes on devrai utiliser le queuename de WateRMQ
-    memcpy(queuename, amqp_bytes_malloc_dup(r->queue), sizeof(amqp_bytes_malloc_dup(r->queue)));
-    if (queuename.bytes == NULL) {
+    //On a des doutes on devrai utiliser le queuename de WateRMQ : Danger
+    queue = amqp_bytes_malloc_dup(r->queue); 
+    //sizeof(amqp_bytes_malloc_dup(r->queue));
+    if (queue.bytes == NULL) {
       fprintf(stderr, "Out of memory while copying queue name");
-      return 1;
+      return;
     }
   }
 
   amqp_queue_bind(
     _instance->conf_login->conn, 1, 
-    _instance->conf_exchange->queue/*queuename*/, 
+    queue/*queuename*/, 
     amqp_cstring_bytes(_instance->conf_exchange->exchange),
     amqp_cstring_bytes(_instance->conf_exchange->bindingKey), 
     amqp_empty_table);
@@ -717,7 +737,7 @@ void configurationRabbitMQ_private(WateRQM * _instance){
   die_on_amqp_error(ret_code, _instance->except->bindingExceptionMessage /*"Binding queue"*/);
 
   amqp_basic_consume(_instance->conf_login->conn, 
-    1, _instance->conf_exchange->queue, 
+    1, queue, 
     amqp_empty_bytes, 
     0, 1, 0, amqp_empty_table);
   
@@ -730,13 +750,13 @@ void configurationRabbitMQ_private(WateRQM * _instance){
 }
 
 /* Depuis C++ (classique Mais privilegions une classe): 
-wrmq_info = _init_WateRQM_public
-configurationExceptionMessage_WateRQM_public(...)
-configurationExchange_WateRQM_public(...)
-configurationConnection_WateRQM_public(...)
-configurationLogin_WateRQM_public(...)
-  Implicitly ->configurationRabbitMQ_private(WateRQM * info)
-start_consuming_public(WateRQM * wrmq_info);
+wrmq_info = _init_WateRMQ_public
+configurationExceptionMessage_WateRMQ_public(...)
+configurationExchange_WateRMQ_public(...)
+configurationConnection_WateRMQ_public(...)
+configurationLogin_WateRMQ_public(...)
+  Implicitly ->configurationRabbitMQ_private(WateRMQ * info)
+start_consuming_public(WateRMQ * wrmq_info);
 
 while(){
   char * data = getCurrentMessage_public();
@@ -746,46 +766,6 @@ while(){
   //Real time control
 }
 */
-
-void main_rabbitMQ_pthread_private(void * info){
-  // Transtypage
-  WateRQM * _instance = (WateRQM *) info;
-  // Lancement du coeur de la routine
-  rabbitmqConsuming_private(_instance);
-  //couverture : code mort
-}
-
-
-void start_consuming_public(WateRQM * wrmq_info){
-  //wrmq from Login Procedure
-	pthread_t my_consumer_thread;
-    // Configuration + Connexion
-  configurationRabbitMQ_private(wrmq_info);
-    // Configuration du pont Mmap+Queue
-    int length = 0;
-    int addr = 0;
-    int prot = 0;
-    int flags = 0;
-    int fd     = 0;
-    int offset = 0; 
-    struct stat st = 0;
-    configurationQueueMmap_private(
-    wrmq_info, "queue.bridge", length, addr, prot, flags, fd, offset, st, ptr_queue);
-configurationSemaphoreMmap_private(wrmq_infos, sem_name, oflag, mode, value,semaphore_self);
-  //Creation du thread
-	pthread_create(&my_consumer_thread, NULL, main_rabbitMQ_pthread_private, (void *) &wrmq_info); 
-  pthread_join(&my_consumer_thread, NULL);
-  //Le main doit continuer de tourner pendant
-  pthread_wait(&my_consumer_thread);
-}
-
-
-
-////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-
-
-
 
 typedef enum {
   OPT_INVALID=-1,
@@ -935,37 +915,115 @@ Informations* processArgv(int argc, const char * argv[]){
         ok = 1; 
         break;
       default:
-        printf("%s: INVALID\n", i, argv[i]);
-        exit(EXIT_FAILURE);
+        printf("%d: %s: INVALID\n", cpt, argv[cpt++]);
+        //exit(EXIT_FAILURE);
     }
   }
   // Analyse des arguments :
-
-
 
   return info;
 }
 
 
+void main_rabbitMQ_pthread_private(void * info){
+  // Transtypage
+  WateRMQ * _instance = (WateRMQ *) info;
+  // Lancement du coeur de la routine
+  rabbitmqConsuming_private(_instance);
+  //couverture : code mort
+}
 
-void main(int argc, const char * argv[])
+
+void start_consuming_public(WateRMQ * wrmq_info){
+  //wrmq from Login Procedure
+	//pthread_t my_consumer_thread;
+    // Configuration + Connexion
+  configurationRabbitMQ_private(wrmq_info);
+    // Configuration du pont Mmap+Queue
+    size_t length = 0;
+    int * addr = (int *) 0;
+    int prot = 0;
+    int flags = 0;
+    int fd     = 0;
+    int offset = 0; 
+    int oflag = 0;
+    int value = 0;
+    struct stat st = 0;
+    int mode = 0;
+    (void)st;
+    sem_t * semaphore_self;
+    char * sem_name = "/semaphore-consumer";
+    configurationQueueMmap_private(
+    wrmq_info, "queue.bridge", length,  addr, prot, flags, fd, offset, st, wrmq_info->qmmap->ptr_queue);
+    configurationSemaphoreMmap_private(wrmq_info, sem_name, oflag, mode, value,semaphore_self);
+    main_rabbitMQ_pthread_private((void *) &wrmq_info);
+
+
+
+  //Creation du thread
+	//pthread_create(&my_consumer_thread, NULL, main_rabbitMQ_pthread_private, (void *) &wrmq_info); 
+  //pthread_join(&my_consumer_thread, NULL);
+  //Le main doit continuer de tourner pendant
+  //pthread_wait(&my_consumer_thread);
+}
+
+
+
+////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+
+
+int main(int argc, const char * argv[])
 {
-    Informations * info;
-    if((info=processArgv(argc, argv)) == NULL){
-        fprintf(stderr, "%s\n", "Error processArgv(argc, argv)");
-        exit(EXIT_FAILURE);
-    }
+  Informations * info;
+  if((info=processArgv(argc, argv)) == NULL){
+      fprintf(stderr, "%s\n", "Error processArgv(argc, argv)");
+      exit(EXIT_FAILURE);
+  }
 
-    //Ici utilisation des infos
+  //Ici utilisation des infos
+  WateRMQ * wrmq_info;
+  wrmq_info = _init_WateRMQ_public();
+  configurationExceptionMessage_WateRMQ_public(
+    info->loginExceptionMessage,
+    info->openingChannelExceptionMessage,
+    info->queueExceptionMessage,
+    info->bindingExceptionMessage,
+    info->consumingExceptionMessage,
+    info->closingChannelExceptionMessage,
+    info->closingConnectionExceptionMessage,
+    info->endingConnectionExceptionMessage
+  );
 
-    wrmq_info = _init_WateRQM_public(...);
-    configurationExceptionMessage_WateRQM_public(...);
-    configurationExchange_WateRQM_public(...);
-    configurationConnection_WateRQM_public(...);
-    configurationLogin_WateRQM_public(...);
-    //Implicitly ->configurationRabbitMQ_private(WateRQM * info)
-    start_consuming_public(WateRQM * wrmq_info);
-        
-    printf("Started with file\n");
 
-};
+  configurationExchange_WateRMQ_public(
+    wrmq_info,
+    info->exchange_name,
+    info->bindingKey,
+    info->queuename
+  );
+
+
+  configurationConnection_WateRMQ_public(
+    wrmq_info,
+    info->hostname,
+    info->port
+  );
+
+  configurationLogin_WateRMQ_public(
+    wrmq_info,
+    info->v_host,
+    info->channel_max,
+    info->frame_max,
+    info->heartbeat,
+    AMQP_SASL_METHOD_PLAIN,
+    info->username,
+    info->password
+  );
+  //Implicitly ->configurationRabbitMQ_private(WateRMQ * info)
+  start_consuming_public(wrmq_info);
+      
+  printf("Started with file\n");
+  return 0;
+}
