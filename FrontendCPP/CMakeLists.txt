@@ -8,7 +8,7 @@ project(WateRMQCPP)
 #add_subdirectory(libWateRMQ)
 
 # Crée des variables avec les fichiers à compiler
-set(SRCS WateRMQCPP.c)
+set(SRCS WateRMQCPP.cpp)
 
 add_library(SemaphoreCPP SemaphoreCPP.cpp)
 
