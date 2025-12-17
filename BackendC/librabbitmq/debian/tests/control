@@ -1,0 +1,5 @@
+Tests: upstream
+Depends:
+ @,
+ @builddeps@,
+Restrictions: allow-stderr

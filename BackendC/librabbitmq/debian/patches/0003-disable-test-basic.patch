@@ -1,0 +1,25 @@
+From: Gianfranco Costamagna <locutusofborg@debian.org>
+Date: Tue, 7 Jan 2020 09:08:34 +0100
+Subject: This test seems to require an active AMQP instance,
+
+Bug-Debian: https://bugs.debian.org/911693
+Last-Update: 2018-12-17
+
+something not possible during build process. Disable it for now.
+---
+ tests/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 320a73d..e5cc89b 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -35,7 +35,7 @@ target_link_libraries(test_basic rabbitmq-static)
+ 
+ if (RUN_SYSTEM_TESTS)
+   if (NOT APPLE)
+-    add_test(basic test_basic)
++    #add_test(basic test_basic)
+   endif()
+ endif(RUN_SYSTEM_TESTS)
+ 

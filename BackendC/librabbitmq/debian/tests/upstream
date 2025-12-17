@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+SRC=$(pwd)
+cd ${AUTOPKGTEST_TMP}
+cmake ${SRC}
+make all test

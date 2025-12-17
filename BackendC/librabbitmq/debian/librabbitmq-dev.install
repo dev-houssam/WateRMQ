@@ -1,0 +1,5 @@
+usr/include/*.h
+usr/lib/*/lib*.a
+usr/lib/*/lib*.so
+usr/lib/*/pkgconfig/librabbitmq.pc
+usr/lib/*/cmake/rabbitmq-c/*.cmake

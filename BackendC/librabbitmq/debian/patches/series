@@ -1,0 +1,4 @@
+0001-cmake_with_ssl.patch
+0002-use_cmake_package.patch
+0003-disable-test-basic.patch
+0004-Fix-typo-in-amqp-publish.1-manpage.patch

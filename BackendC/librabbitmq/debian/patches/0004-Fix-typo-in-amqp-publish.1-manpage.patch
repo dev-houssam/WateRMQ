@@ -1,0 +1,21 @@
+From: Michael Fladischer <FladischerMichael@fladi.at>
+Date: Mon, 21 Feb 2022 22:10:32 +0000
+Subject: Fix typo in amqp-publish.1 manpage.
+
+---
+ tools/doc/amqp-publish.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/doc/amqp-publish.xml b/tools/doc/amqp-publish.xml
+index aae07f4..54c5439 100644
+--- a/tools/doc/amqp-publish.xml
++++ b/tools/doc/amqp-publish.xml
+@@ -70,7 +70,7 @@
+                         The routing key to publish with.  If omitted,
+                         an empty routing key is assumed.  A routing
+                         key must be specified when publishing to the
+-                        default exchange; in that case, accoding to
++                        default exchange; in that case, according to
+                         the AMQP specification, the routing key
+                         corresponds to a queue name.
+                     </para>
