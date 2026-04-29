@@ -1,7 +1,8 @@
-// SemaphoreCPP.cpp
 #include "SemaphoreCPP.hpp"
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <cstdio>
+#include <cstdlib>
 
 SemaphoreCPP::SemaphoreCPP(const std::string& sem_name, bool create) 
     : _sem_name(sem_name), _is_named(true) {
@@ -20,12 +21,27 @@ SemaphoreCPP::SemaphoreCPP(const std::string& sem_name, bool create)
 SemaphoreCPP::SemaphoreCPP(sem_t* sem) : _sem(sem), _is_named(false) {}
 
 SemaphoreCPP::~SemaphoreCPP() {
+    if (_is_named && _sem != SEM_FAILED) {
+        sem_close(_sem);
+    }
+}
+
+void SemaphoreCPP::wait() {
+    sem_wait(_sem);
+}
+
+void SemaphoreCPP::post() {
+    sem_post(_sem);
+}
+
+void SemaphoreCPP::close() {
     if (_is_named) {
         sem_close(_sem);
     }
 }
 
-void SemaphoreCPP::wait() { sem_wait(_sem); }
-void SemaphoreCPP::post() { sem_post(_sem); }
-void SemaphoreCPP::close() { if (_is_named) sem_close(_sem); }
-void SemaphoreCPP::unlink() { if (_is_named) sem_unlink(_sem_name.c_str()); }
+void SemaphoreCPP::unlink() {
+    if (_is_named) {
+        sem_unlink(_sem_name.c_str());
+    }
+}
