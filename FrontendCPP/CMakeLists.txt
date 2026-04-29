@@ -1,31 +1,40 @@
-# Nous voulons un cmake "récent" pour utiliser les dernières fonctionnalités
 cmake_minimum_required(VERSION 3.28.3)
-
-# Notre projet est étiqueté hello
 project(WateRMQCPP)
 
-# On inclut notre bibliothèque dans le processus de CMake
-#add_subdirectory(libWateRMQ)
+# Find required packages
+find_package(Threads REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-# Crée des variables avec les fichiers à compiler
-set(SRCS WateRMQCPP.cpp)
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(SemaphoreCPP SemaphoreCPP.cpp)
+# Source files
+set(SRCS 
+    WateRMQCPP.cpp 
+    SemaphoreCPP.cpp 
+    WateRMQ.cpp
+)
 
-add_library(WateRMQ WateRMQ.cpp)
-    
-
-target_include_directories(SemaphoreCPP PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
-
-target_include_directories(WateRMQ PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
-
-# Notre exécutable
+# Create executable
 add_executable(main ${SRCS})
 
+# Include directories
+target_include_directories(main PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${nlohmann_json_INCLUDE_DIRS}
+)
 
-# Et pour que l'exécutable fonctionne, il faut lui indiquer la bibliothèque dont il dépend
-target_link_libraries(main PRIVATE WateRMQ SemaphoreCPP)
+# Link libraries
+target_link_libraries(main PRIVATE
+    ${CMAKE_THREAD_LIBS_INIT}
+    nlohmann_json::nlohmann_json
+    rt  # for shm_open
+    pthread
+)
 
-# Indique que l'on installe l'exécutable dans un dossier bin
-install (TARGETS main DESTINATION bin)
+# Compiler options
+target_compile_options(main PRIVATE -Wall -Wextra -g)
 
+# Install
+install(TARGETS main DESTINATION bin)
