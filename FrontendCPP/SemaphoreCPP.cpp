@@ -1,25 +1,15 @@
-#include <semaphore.h>
-#include <cstdlib>
-#include <string>
-
-#include <fcntl.h>  // For O_* constants
-#include <sys/stat.h>  // For mode constants
-
+// SemaphoreCPP.cpp
 #include "SemaphoreCPP.hpp"
+#include <fcntl.h>
+#include <sys/stat.h>
 
-using namespace std;
-
-SemaphoreCPP::SemaphoreCPP(){}
-
-SemaphoreCPP::SemaphoreCPP(const std::string & sem_name){
-    this->_sem_name = sem_name;
-    semOpen();
-    semInit();
-}
-
-void SemaphoreCPP::semOpen(){
-    char * sem_name = this->_sem_name.data();
-    _sem = sem_open(sem_name, O_RDWR, 0644);
+SemaphoreCPP::SemaphoreCPP(const std::string& sem_name, bool create) 
+    : _sem_name(sem_name), _is_named(true) {
+    if (create) {
+        _sem = sem_open(sem_name.c_str(), O_CREAT | O_RDWR, 0644, 0);
+    } else {
+        _sem = sem_open(sem_name.c_str(), O_RDWR);
+    }
     
     if (_sem == SEM_FAILED) {
         perror("sem_open");
@@ -27,27 +17,15 @@ void SemaphoreCPP::semOpen(){
     }
 }
 
-void SemaphoreCPP::semInit(){
-    sem_init(_sem, _p1, _p2);
+SemaphoreCPP::SemaphoreCPP(sem_t* sem) : _sem(sem), _is_named(false) {}
+
+SemaphoreCPP::~SemaphoreCPP() {
+    if (_is_named) {
+        sem_close(_sem);
+    }
 }
 
-void SemaphoreCPP::semWait(){
-    sem_wait(_sem);
-}
-
-void SemaphoreCPP::semPost(){
-    sem_post(_sem);
-}
-void SemaphoreCPP::semClose(){
-    // This method must be executed before sem_unlink
-    sem_close(_sem);
-}
-
-void SemaphoreCPP::semUnlink(){
-    std::string str;
-    char * sem_name = this->_sem_name.data();
-    sem_unlink(sem_name);
-}
-void SemaphoreCPP::semDestroy(){
-    sem_destroy(_sem);
-}
+void SemaphoreCPP::wait() { sem_wait(_sem); }
+void SemaphoreCPP::post() { sem_post(_sem); }
+void SemaphoreCPP::close() { if (_is_named) sem_close(_sem); }
+void SemaphoreCPP::unlink() { if (_is_named) sem_unlink(_sem_name.c_str()); }
