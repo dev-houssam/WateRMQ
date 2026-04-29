@@ -1,49 +1,31 @@
+// SemaphoreCPP.hpp
 #ifndef _H_SEMAPHORE_H
 #define _H_SEMAPHORE_H
 
-
 #include <semaphore.h>
-#include <cstdlib>
 #include <string>
-
-#include <fcntl.h>  // For O_* constants
-#include <sys/stat.h>  // For mode constants
-
-
-using namespace std;
-
-typedef struct {
-    char * _sem_name;
-    int oflag;
-    mode_t mode;
-    unsigned int value; 
-    sem_t * semaphore_self;
-} SemaphoreMmap;
-
-
+#include <cstdio>
+#include <cstdlib>
 
 class SemaphoreCPP {
-    private:
-        sem_t * _sem;
-        int _p1 = 0;    
-        int _p2 = 1;
-        string _sem_name;
-    public :
-    SemaphoreCPP();
-    SemaphoreCPP(const string & sem_name);
+private:
+    sem_t* _sem;
+    std::string _sem_name;
+    bool _is_named;  // named vs unnamed semaphore
     
-    void semOpen();
-
-    void semInit();
-
-    void semWait();
-
-    void semPost();
-    void semClose();
-
-    void semUnlink();
-    void semDestroy();
-
+public:
+    // Pour named semaphore (sémaphores système)
+    SemaphoreCPP(const std::string& sem_name, bool create = true);
+    
+    // Pour unnamed semaphore (sémaphores en mémoire partagée)
+    SemaphoreCPP(sem_t* sem);
+    
+    ~SemaphoreCPP();
+    
+    void wait();
+    void post();
+    void close();
+    void unlink();
 };
 
 #endif
